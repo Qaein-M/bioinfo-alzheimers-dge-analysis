@@ -64,6 +64,37 @@ try:
     # Display plot in Streamlit
     st.plotly_chart(fig, use_container_width=True)
 
+# --- PATHWAY ENRICHMENT PLOT ---
+    st.subheader("Top Enriched Biological Processes (Up-regulated Genes)")
+    
+    try:
+        enrichment_df = pd.read_csv('data/processed/enrichment_upregulated.csv')
+        
+        # Bierzemy top 10 szlaków i odwracamy kolejność, żeby najistotniejszy był na górze wykresu
+        top_pathways = enrichment_df.head(10).iloc[::-1]
+        
+        # Transformujemy P-value dla lepszej czytelności na osi X
+        top_pathways['-log10(P-value)'] = -np.log10(top_pathways['P-value'])
+        
+        # Czyścimy nazwy szlaków (usuwamy kody GO na końcu np. "(GO:0035924)")
+        top_pathways['Clean_Term'] = top_pathways['Term'].apply(lambda x: x.split(' (GO:')[0])
+        
+        fig_pathway = px.bar(
+            top_pathways, 
+            x='-log10(P-value)', 
+            y='Clean_Term',
+            orientation='h',
+            title='Gene Ontology: Biological Process',
+            labels={'Clean_Term': 'Biological Process', '-log10(P-value)': '-Log10 P-value'},
+            color='-log10(P-value)',
+            color_continuous_scale='Reds'
+        )
+        
+        st.plotly_chart(fig_pathway, use_container_width=True)
+        
+    except FileNotFoundError:
+        st.warning("Pathway enrichment data not found. Run the enrichment notebook first.")
+
     # --- DATA TABLE ---
     st.subheader("DGE Results Table")
     st.dataframe(results_df)
